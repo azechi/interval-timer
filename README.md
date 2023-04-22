@@ -3,6 +3,25 @@
 
 ## 開発日誌
 
+#### 20230423
+そもそもインターバルタイマーにAudioノードをあれこれするスケジューリングは必要ないのでは？
+* 開始時に全てのタイミングが決められるならstart(time), stop(time)を設定したノードを沢山connectしとけばいい
+  * メモリを沢山使っても実際にやってみてちゃんと動けばそれでいいんじゃない？
+
+Web Audioのスケジューリング、setInterval, AudioWorkletProcessor, requestAnimationFrameを比較した記事
+* [Web Audio Scheduling | Loophole Letters](https://loophole-letters.vercel.app/web-audio-scheduling)
+  * > requestAnimationFrame won't work with inactive tabs + has a fixed interval
+  * > AudioWorklet is firing too often + seems pretty hacky + has a fixed interval
+  * > setInterval works in inactive tabs and has a variable interval
+
+shredArrayBufferをgithub pagesで使うにはServiceWorkerでCOOPヘッダーを付けてしまえばOK!
+* [ffmpeg.wasmをgithub pagesで動かすよ](https://zenn.dev/wok/articles/0035_ffmpeg_wasm_on_github_pages)
+  * 同じ人の[en blog](https://dannadori.medium.com/how-to-deploy-ffmpeg-wasm-application-to-github-pages-76d1ca143b17)
+
+##### https://googlechromelabs.github.io/web-audio-samples/
+chromeのaudioサンプル集 audio workletもあり  
+記事 [audioworkletとwasmとsharedarraybufferを使ったデモの解説](https://developer.chrome.com/blog/audio-worklet-design-pattern/)
+
 #### 20230420
 オブジェクトの始末はどうしたら？
 * [AudioNode Lifetime section seems to attempt to make garbage collection observable · Issue #1471 · WebAudio/web-audio-api](https://github.com/WebAudio/web-audio-api/issues/1471)
@@ -21,6 +40,8 @@ Web Audio APIでは仕様として、複数の入力を1つの出力にmixする
 関係しそうな話題、あとで読む
 * [sharedarraybufferを使うための要件](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer#security_requirements)
 * [A tale of two clocks](https://web.dev/audio-scheduling/)
+  * https://github.com/cwilso/metronome
+    * workerで`setInterval(()=>{postMessage("tick")}, interval)`してる
   * AudioWorkletがないころの話
   * [hacker news](https://news.ycombinator.com/item?id=31935058)
     * [Heavy throttling of chained JS timers beginning in Chrome 88](https://developer.chrome.com/blog/timer-throttling-in-chrome-88/)
