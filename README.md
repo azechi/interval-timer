@@ -17,6 +17,7 @@ Web Audioのスケジューリング、setInterval, AudioWorkletProcessor, reque
 shredArrayBufferをgithub pagesで使うにはServiceWorkerでCOOPヘッダーを付けてしまえばOK!
 * [ffmpeg.wasmをgithub pagesで動かすよ](https://zenn.dev/wok/articles/0035_ffmpeg_wasm_on_github_pages)
   * 同じ人の[en blog](https://dannadori.medium.com/how-to-deploy-ffmpeg-wasm-application-to-github-pages-76d1ca143b17)
+* やってみた https://github.com/azechi/crossoriginisolated-githubpages
 
 ##### https://googlechromelabs.github.io/web-audio-samples/
 chromeのaudioサンプル集 audio workletもあり  
