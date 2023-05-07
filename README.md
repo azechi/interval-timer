@@ -3,6 +3,12 @@
 
 ## 開発日誌
 
+#### 20240506
+GitHub Pagesでパブリッシュ azechi/interval-timer#10
+* [diff](https://github.com/azechi/interval-timer/compare/37ab92e059bcfe76edb9ac112a116edf52231621..8068967cf216188c10ab5e0cfefb2878ca76aa34)
+* GitHub Actionsでvite buildしてgh-pagesにプッシュ
+* 手動トリガーのみ
+
 #### 20230423
 そもそもインターバルタイマーにAudioノードをあれこれするスケジューリングは必要ないのでは？
 * 開始時に全てのタイミングが決められるならstart(time), stop(time)を設定したノードを沢山connectしとけばいい
