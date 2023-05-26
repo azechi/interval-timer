@@ -1,54 +1,88 @@
 import "./style.css";
 
+let bps = 0.5;
+
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
-    <button id="button" type="button">start</button>
+    <button id="button" type="button">play</button>
     <span id="timestamp">0</span>
+  </div>
+  <div>
+    <input type="range" id="range_bpm" min="40" max="218" value="${
+      60 / bps
+    }" style="width:200px;"  />
+    <div>
+    <span id="span_bpm">80</span><span style="margin-left:0.5em;">BPM</span>
+    </div>
   </div>
 `;
 
-async function setup(element: HTMLButtonElement) {
-  let onoff = true;
+const range_bpm = document.getElementById("range_bpm")! as HTMLInputElement;
+const span_bpm = document.getElementById("span_bpm")!;
+range_bpm.oninput = () => {
+  span_bpm.textContent = range_bpm.value;
+  bps = 60 / parseInt(range_bpm.value);
+};
 
-  const ctx = new AudioContext();
-  const gain = new GainNode(ctx, { gain: 0 });
-  const osc = new OscillatorNode(ctx, { type: "sine" });
-  gain.connect(ctx.destination);
-  osc.connect(gain);
-  osc.start();
+const NOTELENGTH = 0.05; //s
+const INTERVAL = 100; //ms
+const LOOKAHEAD = 0.1; //s
 
-  const span = document.getElementById("timestamp")!;
-  let offset = 0;
-  function step() {
-    span.textContent = (ctx.currentTime - offset).toFixed(2);
-    if (onoff) {
-      window.requestAnimationFrame(step);
-    }
+let nextNoteTime = 0.0; //s
+let ctx: AudioContext;
+let gain: GainNode;
+let isPlaying = false;
+
+let beatNumber = 0;
+const button = document.getElementById("button")! as HTMLButtonElement;
+
+button.onclick = ({ currentTarget }) => {
+  if (!ctx) {
+    ctx = new AudioContext();
+    // unlock
+    const node = new AudioBufferSourceNode(ctx);
+    node.buffer = new AudioBuffer({
+      length: 1,
+      numberOfChannels: 1,
+      sampleRate: ctx.sampleRate,
+    });
+    node.connect(ctx.destination);
+    node.start();
   }
 
-  const toggle = () => {
-    onoff = !onoff;
-    element.innerHTML = `${onoff}`;
+  isPlaying = !isPlaying;
 
-    if (onoff) {
-      offset = ctx.currentTime;
-      step();
-      [...Array(100)].map((_, i) => {
-        const s = 1.0 * i + offset;
-        gain.gain.setValueAtTime(0.25, s);
-        gain.gain.setValueAtTime(0, s + 0.1);
-      });
-      ctx.resume();
-    } else {
-      gain.gain.cancelScheduledValues(0);
-      gain.gain.setValueAtTime(0, 0);
-      ctx.suspend();
-    }
-  };
+  if (isPlaying) {
+    nextNoteTime = ctx.currentTime + 0.1;
+    beatNumber = 0;
+    tick();
+    gain = new GainNode(ctx);
+    gain.gain.value = 0.5;
+    gain.connect(ctx.destination);
+    ctx.resume();
+  } else {
+    gain.disconnect();
+    ctx.suspend();
+  }
+  (currentTarget as HTMLButtonElement).innerText = isPlaying ? "stop" : "play";
+};
 
-  element.addEventListener("click", toggle);
+function tick() {
+  if (!isPlaying) {
+    return;
+  }
+  setTimeout(tick, INTERVAL);
 
-  toggle();
+  while (nextNoteTime < ctx.currentTime + LOOKAHEAD) {
+    // schedule note
+    const osc = new OscillatorNode(ctx);
+    osc.frequency.value = 440;
+    osc.connect(gain);
+    osc.start(nextNoteTime);
+    osc.stop(nextNoteTime + NOTELENGTH);
+
+    // next note
+    nextNoteTime += bps / 2; // 4 = 16分音符, 2 = 8分音符, 1 = 4分音符
+    beatNumber = ++beatNumber % 3;
+  }
 }
-
-setup(document.querySelector<HTMLButtonElement>("#button")!);
