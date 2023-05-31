@@ -5,7 +5,12 @@ let bps = 0.5;
 document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
   <div>
     <button id="button" type="button">play</button>
-    <span id="timestamp">0</span>
+    <div id="beat" style="display:flex;justify-content:space-between;">
+      <div style="width:40px;height:40px;background:gray;"></div>
+      <div style="width:40px;height:40px;background:gray;"></div>
+      <div style="width:40px;height:40px;background:gray;"></div>
+      <div style="width:40px;height:40px;background:gray;"></div>
+    </div>
   </div>
   <div>
     <input type="range" id="range_bpm" min="40" max="218" value="${
@@ -35,6 +40,9 @@ let isPlaying = false;
 
 let beatNumber = 0;
 const button = document.getElementById("button")! as HTMLButtonElement;
+const beat = document.getElementById("beat")!;
+
+const scheduledNotes: any = [];
 
 button.onclick = ({ currentTarget }) => {
   if (!ctx) {
@@ -53,7 +61,13 @@ button.onclick = ({ currentTarget }) => {
   isPlaying = !isPlaying;
 
   if (isPlaying) {
+    draw();
     nextNoteTime = ctx.currentTime + 0.1;
+    [...beat.children].map(
+      (e) => ((e as HTMLDivElement).style.background = "gray")
+    );
+    (beat.children[0] as HTMLDivElement).style.background = "red";
+
     beatNumber = 0;
     tick();
     gain = new GainNode(ctx);
@@ -61,11 +75,28 @@ button.onclick = ({ currentTarget }) => {
     gain.connect(ctx.destination);
     ctx.resume();
   } else {
+    scheduledNotes.splice(0, scheduledNotes.length);
     gain.disconnect();
     ctx.suspend();
   }
   (currentTarget as HTMLButtonElement).innerText = isPlaying ? "stop" : "play";
 };
+
+function draw() {
+  if (!isPlaying) {
+    return;
+  }
+  requestAnimationFrame(draw);
+
+  const now = ctx.currentTime;
+
+  while (scheduledNotes.length && (scheduledNotes[0][0] as any) < now) {
+    const beatNumber = scheduledNotes.shift()[1];
+    [...beat.children].map((e, i) => {
+      (e as HTMLDivElement).style.background = i == beatNumber ? "red" : "gray";
+    });
+  }
+}
 
 function tick() {
   if (!isPlaying) {
@@ -76,13 +107,14 @@ function tick() {
   while (nextNoteTime < ctx.currentTime + LOOKAHEAD) {
     // schedule note
     const osc = new OscillatorNode(ctx);
-    osc.frequency.value = 440;
+    osc.frequency.value = beatNumber ? 880 : 440;
     osc.connect(gain);
     osc.start(nextNoteTime);
     osc.stop(nextNoteTime + NOTELENGTH);
 
     // next note
-    nextNoteTime += bps / 2; // 4 = 16分音符, 2 = 8分音符, 1 = 4分音符
-    beatNumber = ++beatNumber % 3;
+    nextNoteTime += bps / 4; // 4 = 16分音符, 2 = 8分音符, 1を4分音符として
+    beatNumber = ++beatNumber % 4;
+    scheduledNotes.push([nextNoteTime, beatNumber]);
   }
 }
